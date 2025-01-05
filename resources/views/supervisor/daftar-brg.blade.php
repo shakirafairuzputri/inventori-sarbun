@@ -1,0 +1,88 @@
+@section('title', 'Daftar Barang')
+@extends('layout.sidebar')
+@section('content')
+@if(session('success'))
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
+@elseif(session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
+{{-- @if (session('success'))
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="successModalLabel">Sukses</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {{ session('success') }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var successModal = new bootstrap.Modal(document.getElementById('successModal'));
+        successModal.show();
+    });
+</script>
+@endif --}}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Data Barang</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item active">Daftar Barang</li>
+    </ol>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Tabel Data
+        </div>
+        <div class="d-flex align-items-left justify-content-between mt-2 mb-0 mx-3">
+            <a class="btn btn-primary ml-4 me-3" href="{{ route('supervisor.tambah-daftar-brg') }}">Tambah Data</a>
+            <form action="{{ route('supervisor.import-barang') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <input type="file" name="file" required>
+                <button type="submit" class="btn btn-success">Import Excel</button>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="datatablesSimple" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama Bahan/Barang</th>
+                        <th>Kelompok</th>
+                        <th>Kategori</th>
+                        <th>Satuan</th>
+                        <th>Stok</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($barangs as $key => $barang)
+                        <tr>
+                            <td>{{ $key + 1 }}</td>
+                            <td>{{ $barang->nama_brg }}</td>
+                            <td>{{ $barang->kelompok }}</td>
+                            <td>{{ $barang->kategori_brg->kategori_brg ?? 'Tidak diketahui' }}</td>
+                            <td>{{ $barang->satuan_brg->satuan_brg ?? 'Tidak diketahui'}}</td>
+                            <td>{{ $barang->stok_brg }}</td>
+                            <td>
+                                <a href="{{ route('supervisor.edit-daftar-brg', $barang->id) }}" class="btn btn-primary">Edit</a>
+                            </td>
+                        </tr>
+                        @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@endsection
