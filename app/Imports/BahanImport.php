@@ -2,7 +2,7 @@
 namespace App\Imports;
 
 use App\Models\Bahan;
-use App\Models\KategoriBhn; // Pastikan model Kategori diimpor
+use App\Models\KategoriBhn;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Illuminate\Support\Facades\Log;
@@ -32,18 +32,14 @@ class BahanImport implements ToModel, WithHeadingRow
                 return null;
             }
 
-            // Mengecek apakah bahan sudah ada
             $existingBahan = Bahan::where('nama', $row['nama'])
                 ->where('kategori_id', $kategori->id)
                 ->first();
 
-            // Jika sudah ada, lewati baris ini
             if ($existingBahan) {
                 Log::info('Skipped row because bahan already exists: ' . json_encode($row));
                 return null;
             }
-
-            // Menambahkan bahan baru jika belum ada
             Log::info('Creating new bahan: ' . $row['nama']);
             return new Bahan([
                 'nama' => $row['nama'],

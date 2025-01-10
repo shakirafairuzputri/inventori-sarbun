@@ -30,7 +30,6 @@ class ReportDailyBahan extends Command
     /**
      * Execute the console command.
      */
-    
     public function handle()
     {
         $today = Carbon::today()->toDateString();
@@ -47,17 +46,16 @@ class ReportDailyBahan extends Command
 
         foreach ($persediaanBahan as $data) {
             $bahanId = $data->produksi->pembelian->bahan->id;
+
+            // Filter data retur hanya untuk tanggal yang sama
             $returBahan = ReturBahan::where('bahan_id', $bahanId)
-                ->select(DB::raw('DATE(tanggal) as tanggal'), DB::raw('SUM(retur_baik) as retur_baik'), DB::raw('SUM(retur_rusak) as retur_rusak'))
-                ->groupBy(DB::raw('bahan_id'), DB::raw('DATE(tanggal)'))
+                ->whereDate('tanggal', $data->tanggal) // Tambahkan filter tanggal
+                ->select(DB::raw('SUM(retur_baik) as retur_baik'), DB::raw('SUM(retur_rusak) as retur_rusak'))
                 ->first();
-            if ($returBahan) {
-                $returBaik = $returBahan->retur_baik;
-                $returRusak = $returBahan->retur_rusak;
-            } else {
-                $returBaik = 0;
-                $returRusak = 0;
-            }
+
+            $returBaik = $returBahan->retur_baik ?? 0;
+            $returRusak = $returBahan->retur_rusak ?? 0;
+
             $yesterdayData = PersediaanBahan::where('tanggal', $yesterday)
                 ->whereHas('produksi.pembelian.bahan', function ($query) use ($bahanId) {
                     $query->where('id', $bahanId);
@@ -79,14 +77,14 @@ class ReportDailyBahan extends Command
             if (!$produksiData || !$produksiData->pembelian) {
                 $this->info('Tidak ada data produksi atau pembelian untuk bahan ID: ' . $bahanId);
             }
-            
+
             if ($data->stok_awal !== null) {
                 $stokAwal = $data->stok_awal;
-                $this-> info ('data stok awal : '. $stokAwal);
+                $this->info('Data stok awal: ' . $stokAwal);
             } else {
                 if (!$yesterdayData) {
                     $stokAwal = $produksiData->pembelian->bahan->stok;
-                    $this->info('Not Yesterday Data: '. $stokAwal);
+                    $this->info('Not Yesterday Data: ' . $stokAwal);
                 } else {
                     if ($yesterdayData->stok_akhir == $produksiData->pembelian->bahan->stok) {
                         $stokAwal = $yesterdayData->stok_akhir;
@@ -132,11 +130,12 @@ class ReportDailyBahan extends Command
             );
 
             $this->info('Data Persediaan Bahan Tersimpan untuk Bahan ID: ' . $bahanId);
+
             if (isset($data->produksi->pembelian->bahan)) {
                 $bahan = $data->produksi->pembelian->bahan;
                 $bahan->stok = $stok_akhir;
                 $bahan->save();
-                
+
                 $this->info('Stok pada tabel `bahan` untuk Bahan ID: ' . $bahan->id . ' telah diperbarui menjadi: ' . $stok_akhir);
             } else {
                 $this->info('Data bahan tidak ditemukan untuk update stok.');

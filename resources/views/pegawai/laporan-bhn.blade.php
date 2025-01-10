@@ -134,7 +134,9 @@
                                 <td>{{ $data['produksi_rusak'] }}</td>
                                 <td>{{ $data['stok_siang'] }}</td>
                                 <td>{{ $data['cek_fisik'] }}</td>
-                                <td>{{ $data['selisih'] }}</td>
+                                <td>
+                                    {{ $data['selisih'] == 0 ? '0' : ($data['selisih'] < 0 ? '-' . abs($data['selisih']) : $data['selisih']) }}
+                                </td>                                
                                 <td>{{ $data['tambahan_sore'] }}</td>
                                 <td>{{ $data['stok_akhir'] }}</td>
                                 <td>{{ $data['keterangan'] }}</td>

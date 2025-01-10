@@ -9,11 +9,11 @@
         }
         th, td {
             border: 1px solid black;
-            padding: 4px; /* Mengurangi padding */
+            padding: 4px;
             text-align: left;
         }
         h2 {
-            font-size: 14px; /* Ukuran judul lebih kecil */
+            font-size: 14px;
         }
         .tengah {
             text-align: center;
@@ -86,7 +86,9 @@
                     <td>{{ $data['produksi_rusak'] }}</td>
                     <td>{{ $data['stok_siang'] }}</td>
                     <td>{{ $data['cek_fisik'] }}</td>
-                    <td>{{ $data['selisih'] }}</td>
+                    <td>
+                        {{ $data['selisih'] == 0 ? '0' : ($data['selisih'] < 0 ? '-' . abs($data['selisih']) : $data['selisih']) }}
+                    </td>
                     <td>{{ $data['tambahan_sore'] }}</td>
                     <td>{{ $data['stok_akhir'] }}</td>
                     <td>{{ $data['keterangan'] }}</td>

@@ -14,19 +14,18 @@ class PersediaanBahansController extends Controller
 {
     public function viewRetur(Request $request)
     {
-        $tanggalMulai = $request->input('tanggal_mulai', date('Y-m-d')); // Tanggal mulai
-        $tanggalSelesai = $request->input('tanggal_selesai', date('Y-m-d')); // Tanggal selesai
+        $tanggalMulai = $request->input('tanggal_mulai', date('Y-m-d')); 
+        $tanggalSelesai = $request->input('tanggal_selesai', date('Y-m-d'));
         $kategori_id = $request->input('kategori_id', null);
 
         $kategoris = KategoriBhn::all();
 
-        // Query untuk mengambil returbahans dengan relasi bahan, kategori, dan user
         $query = ReturBahan::with(['bahan.kategori', 'user'])
             ->select('id', 'tanggal', 'bahan_id', 'retur_baik', 'retur_rusak', 'user_id', 'status')
-            ->whereBetween('tanggal', [$tanggalMulai, $tanggalSelesai]) // Filter berdasarkan rentang tanggal
+            ->whereBetween('tanggal', [$tanggalMulai, $tanggalSelesai])
             ->where(function($q) {
                 $q->where('retur_baik', '>', 0)
-                ->orWhere('retur_rusak', '>', 0); // Filter jika retur baik atau rusak lebih dari 0
+                ->orWhere('retur_rusak', '>', 0);
             });
 
         if ($kategori_id) {
@@ -49,8 +48,7 @@ class PersediaanBahansController extends Controller
             'status' => 'Sudah Diganti',
         ]);
 
-        // Tambahkan retur_baik dan retur_rusak ke stok bahan
-        $bahan->stok += ($returBahan->retur_baik + $returBahan->retur_rusak); // Menggabungkan kedua nilai
+        $bahan->stok += ($returBahan->retur_baik + $returBahan->retur_rusak); 
         $bahan->save();
 
         return redirect()->route('supervisor.inventori-retur')->with('success', 'Retur bahan berhasil dikembalikan.');
@@ -58,7 +56,6 @@ class PersediaanBahansController extends Controller
 
     public function viewPembelian(Request $request)
     {
-        // Ambil tanggal mulai dan tanggal selesai dari request, default ke hari ini
         $tanggalMulai = $request->input('tanggal_mulai', date('Y-m-d'));
         $tanggalSelesai = $request->input('tanggal_selesai', date('Y-m-d'));
 

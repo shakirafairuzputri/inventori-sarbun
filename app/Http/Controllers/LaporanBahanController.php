@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+
 use App\Models\KategoriBhn;
 use Illuminate\Http\Request;
 use App\Models\PersediaanBahan;
@@ -37,17 +38,10 @@ class LaporanBahanController extends Controller
         foreach ($persediaanBahan as $data) {
             $bahanId = $data->produksi->pembelian->bahan->id;
             $returBahan = ReturBahan::where('bahan_id', $bahanId)
-                ->select(DB::raw('DATE(tanggal) as tanggal'), DB::raw('SUM(retur_baik) as retur_baik'), DB::raw('SUM(retur_rusak) as retur_rusak'))
-                ->groupBy(DB::raw('bahan_id'), DB::raw('DATE(tanggal)'))
+                ->whereDate('tanggal', $data->tanggal) // Tambahkan filter tanggal
+                ->select(DB::raw('SUM(retur_baik) as retur_baik'), DB::raw('SUM(retur_rusak) as retur_rusak'))
+                ->groupBy('bahan_id')
                 ->first();
-
-            if ($returBahan) {
-                $returBaik = $returBahan->retur_baik;
-                $returRusak = $returBahan->retur_rusak;
-            } else {
-                $returBaik = 0;
-                $returRusak = 0;
-            }
 
             $reportData[] = [
                 'id' => $data->id,
@@ -56,83 +50,77 @@ class LaporanBahanController extends Controller
                 'kategori' => optional($data->produksi->pembelian->bahan->kategori)->kategori ?? 'Tidak Diketahui',
                 'satuan' => optional($data->produksi->pembelian->bahan)->satuan ?? 'Tidak Diketahui',
                 'stok_awal' => $data->stok_awal ?? 0,
-                'retur_baik' => optional($returBahan)->retur_baik ?? 0,
-                'retur_rusak' => optional($returBahan)->retur_rusak ?? 0,
+                'retur_baik' => $returBahan->retur_baik ?? 0,
+                'retur_rusak' => $returBahan->retur_rusak ?? 0,
                 'pembelian' => optional($data->produksi->pembelian)->pembelian ?? 0,
                 'produksi_baik' => optional($data->produksi)->produksi_baik ?? 0,
                 'produksi_paket' => optional($data->produksi)->produksi_paket ?? 0,
                 'produksi_rusak' => optional($data->produksi)->produksi_rusak ?? 0,
                 'stok_siang' => $data->stok_siang ?? 0,
                 'cek_fisik' => $data->cek_fisik ?? 0,
-                'selisih' => $data->selisih ?? 0,
+                'selisih' => $data->selisih*-1 ?? 0,
                 'tambahan_sore' => optional($data->produksi->pembelian)->tambahan_sore ?? 0,
                 'stok_akhir' => $data->stok_akhir ?? 0,
                 'keterangan' => $data->keterangan ?? '',
             ];
         }
 
-        // Dapatkan daftar kategori untuk dipilih di filter
         $kategoris = KategoriBhn::all();
 
         return view('pegawai.laporan-bhn', compact('reportData', 'tanggal', 'kategoris'));
     }
-    public function viewLaporanBhnS(Request $request) {
-        $tanggalMulai = $request->input('tanggal_mulai', Carbon::today()->toDateString());
-        $tanggalSelesai = $request->input('tanggal_selesai', Carbon::today()->toDateString());
-        $kategoriId = $request->input('kategori_id'); 
+
+public function viewLaporanBhnS(Request $request)
+{
+    $tanggalMulai = $request->input('tanggal_mulai', Carbon::today()->toDateString());
+    $tanggalSelesai = $request->input('tanggal_selesai', Carbon::today()->toDateString());
+    $kategoriId = $request->input('kategori_id'); 
     
-        $kategoriOptions = KategoriBhn::all();
-        $persediaanBahan = PersediaanBahan::with('produksi.pembelian.bahan.kategori')
+    $kategoriOptions = KategoriBhn::all();
+    $persediaanBahan = PersediaanBahan::with('produksi.pembelian.bahan.kategori')
         ->whereBetween('tanggal', [$tanggalMulai, $tanggalSelesai])
         ->when($kategoriId, function ($query) use ($kategoriId) {
-            // Menambahkan filter dengan kategori_id
             $query->whereHas('produksi.pembelian.bahan.kategori', function ($q) use ($kategoriId) {
-                $q->where('id', $kategoriId); // Filter berdasarkan kategori_id
+                $q->where('id', $kategoriId);
             });
         })
         ->get();
-        
-        $reportData = [];
     
-        foreach ($persediaanBahan as $data) {
-            $bahanId = $data->produksi->pembelian->bahan->id;
-            $returBahan = ReturBahan::where('bahan_id', $bahanId)
-                ->select(DB::raw('DATE(tanggal) as tanggal'), DB::raw('SUM(retur_baik) as retur_baik'), DB::raw('SUM(retur_rusak) as retur_rusak'))
-                ->groupBy(DB::raw('bahan_id'), DB::raw('DATE(tanggal)'))
-                ->first();
+    $reportData = [];
 
-            if ($returBahan) {
-                $returBaik = $returBahan->retur_baik;
-                $returRusak = $returBahan->retur_rusak;
-            } else {
-                $returBaik = 0;
-                $returRusak = 0;
-            }
+    foreach ($persediaanBahan as $data) {
+        $bahanId = $data->produksi->pembelian->bahan->id;
+        $returBahan = ReturBahan::where('bahan_id', $bahanId)
+            ->whereDate('tanggal', $data->tanggal) // Tambahkan filter tanggal
+            ->select(DB::raw('SUM(retur_baik) as retur_baik'), DB::raw('SUM(retur_rusak) as retur_rusak'))
+            ->groupBy('bahan_id')
+            ->first();
 
-            $reportData[] = [
-                'id' => $data->id,
-                'tanggal' => $data->tanggal,
-                'nama_bhn' => optional($data->produksi->pembelian->bahan)->nama ?? 'Tidak Diketahui',
-                'kategori' => optional($data->produksi->pembelian->bahan->kategori)->kategori ?? 'Tidak Diketahui',
-                'satuan' => optional($data->produksi->pembelian->bahan)->satuan ?? 'Tidak Diketahui',
-                'stok_awal' => $data->stok_awal ?? 0,
-                'retur_baik' => optional($returBahan)->retur_baik ?? 0,
-                'retur_rusak' => optional($returBahan)->retur_rusak ?? 0,
-                'pembelian' => optional($data->produksi->pembelian)->pembelian ?? 0,
-                'produksi_baik' => optional($data->produksi)->produksi_baik ?? 0,
-                'produksi_paket' => optional($data->produksi)->produksi_paket ?? 0,
-                'produksi_rusak' => optional($data->produksi)->produksi_rusak ?? 0,
-                'stok_siang' => $data->stok_siang ?? 0,
-                'cek_fisik' => $data->cek_fisik ?? 0,
-                'selisih' => $data->selisih ?? 0,
-                'tambahan_sore' => optional($data->produksi->pembelian)->tambahan_sore ?? 0,
-                'stok_akhir' => $data->stok_akhir ?? 0,
-                'keterangan' => $data->keterangan ?? '',
-            ];
-        }
-        
-        return view('supervisor.laporan-bhn', compact('reportData', 'tanggalMulai', 'tanggalSelesai', 'kategoriId', 'kategoriOptions'));
+        $reportData[] = [
+            'id' => $data->id,
+            'tanggal' => $data->tanggal,
+            'nama_bhn' => optional($data->produksi->pembelian->bahan)->nama ?? 'Tidak Diketahui',
+            'kategori' => optional($data->produksi->pembelian->bahan->kategori)->kategori ?? 'Tidak Diketahui',
+            'satuan' => optional($data->produksi->pembelian->bahan)->satuan ?? 'Tidak Diketahui',
+            'stok_awal' => $data->stok_awal ?? 0,
+            'retur_baik' => $returBahan->retur_baik ?? 0,
+            'retur_rusak' => $returBahan->retur_rusak ?? 0,
+            'pembelian' => optional($data->produksi->pembelian)->pembelian ?? 0,
+            'produksi_baik' => optional($data->produksi)->produksi_baik ?? 0,
+            'produksi_paket' => optional($data->produksi)->produksi_paket ?? 0,
+            'produksi_rusak' => optional($data->produksi)->produksi_rusak ?? 0,
+            'stok_siang' => $data->stok_siang ?? 0,
+            'cek_fisik' => $data->cek_fisik ?? 0,
+            'selisih' => $data->selisih*-1 ?? 0,
+            'tambahan_sore' => optional($data->produksi->pembelian)->tambahan_sore ?? 0,
+            'stok_akhir' => $data->stok_akhir ?? 0,
+            'keterangan' => $data->keterangan ?? '',
+        ];
     }
+    
+    return view('supervisor.laporan-bhn', compact('reportData', 'tanggalMulai', 'tanggalSelesai', 'kategoriId', 'kategoriOptions'));
+}
+
     
 
     public function store(Request $request, $id)
@@ -143,15 +131,30 @@ class LaporanBahanController extends Controller
             'keterangan' => 'nullable|string|max:255',
         ]);
 
+        // Cari data yang akan diperbarui
         $reportData = PersediaanBahan::findOrFail($id);
 
-        $reportData->update([
-            'cek_fisik' => $request->cek_fisik,
-            'keterangan' => $request->keterangan,
-        ]);
+        // Buat array untuk menampung data yang akan diperbarui
+        $updateData = [];
+
+        // Periksa apakah cek_fisik diisi, jika iya tambahkan ke array
+        if ($request->filled('cek_fisik')) {
+            $updateData['cek_fisik'] = $request->cek_fisik;
+        }
+
+        // Periksa apakah keterangan diisi, jika iya tambahkan ke array
+        if ($request->filled('keterangan')) {
+            $updateData['keterangan'] = $request->keterangan;
+        }
+
+        // Jika ada data yang perlu diperbarui, lakukan update
+        if (!empty($updateData)) {
+            $reportData->update($updateData);
+        }
 
         return redirect()->back()->with('success', 'Data berhasil disimpan.');
     }
+
 
     public function downloadPDF(Request $request)
     {
@@ -191,7 +194,12 @@ class LaporanBahanController extends Controller
         foreach ($persediaanBahan as $data) {
             $bahanId = $data->produksi->pembelian->bahan->id;
             $returBahan = ReturBahan::where('bahan_id', $bahanId)
-                ->select(DB::raw('DATE(tanggal) as tanggal'), DB::raw('SUM(retur_baik) as retur_baik'), DB::raw('SUM(retur_rusak) as retur_rusak'))
+                ->whereDate('tanggal', $data->tanggal) // Cocokkan tanggal dengan entri laporan
+                ->select(
+                    DB::raw('DATE(tanggal) as tanggal'),
+                    DB::raw('SUM(retur_baik) as retur_baik'),
+                    DB::raw('SUM(retur_rusak) as retur_rusak')
+                )
                 ->groupBy(DB::raw('bahan_id'), DB::raw('DATE(tanggal)'))
                 ->first();
 
@@ -202,6 +210,7 @@ class LaporanBahanController extends Controller
                 $returBaik = 0;
                 $returRusak = 0;
             }
+
 
             // Mengumpulkan data untuk laporan
             $reportData[] = [
@@ -218,7 +227,7 @@ class LaporanBahanController extends Controller
                 'produksi_rusak' => $data->produksi->produksi_rusak ?? 0,
                 'stok_siang' => $data->stok_siang ?? 0,
                 'cek_fisik' => $data->cek_fisik ?? 0,
-                'selisih' => $data->selisih ?? 0,
+                'selisih' => $data->selisih*-1 ?? 0,
                 'tambahan_sore' => $data->produksi->pembelian->tambahan_sore ?? 0,
                 'stok_akhir' => $data->stok_akhir ?? 0,
                 'keterangan' => $data->keterangan ?? '',
@@ -271,19 +280,23 @@ class LaporanBahanController extends Controller
         foreach ($persediaanBahan as $data) {
             $bahanId = $data->produksi->pembelian->bahan->id;
             $returBahan = ReturBahan::where('bahan_id', $bahanId)
-                ->select(DB::raw('DATE(tanggal) as tanggal'), DB::raw('SUM(retur_baik) as retur_baik'), DB::raw('SUM(retur_rusak) as retur_rusak'))
+                ->whereDate('tanggal', $data->tanggal)
+                ->select(
+                    DB::raw('DATE(tanggal) as tanggal'),
+                    DB::raw('SUM(retur_baik) as retur_baik'),
+                    DB::raw('SUM(retur_rusak) as retur_rusak')
+                )
                 ->groupBy(DB::raw('bahan_id'), DB::raw('DATE(tanggal)'))
-                ->first(); // Menggunakan first() untuk mendapatkan satu hasil
+                ->first();
 
-            // Pastikan hasil tidak null sebelum mengakses propertinya
             if ($returBahan) {
                 $returBaik = $returBahan->retur_baik;
                 $returRusak = $returBahan->retur_rusak;
             } else {
-                // Tangani jika tidak ada data
                 $returBaik = 0;
                 $returRusak = 0;
             }
+
             $reportDatas[] = [
                 'tanggal' => $data->tanggal,
                 'nama_bahan' => $data->produksi->pembelian->bahan->nama,
@@ -298,7 +311,7 @@ class LaporanBahanController extends Controller
                 'produksi_rusak' => $data->produksi->produksi_rusak ?? 0,
                 'stok_siang' => $data->stok_siang ?? 0,
                 'cek_fisik' => $data->cek_fisik ?? 0,
-                'selisih' => $data->selisih ?? 0,
+                'selisih' => $data->selisih*-1 ?? 0,
                 'tambahan_sore' => $data->produksi->pembelian->tambahan_sore ?? 0,
                 'stok_akhir' => $data->stok_akhir ?? 0,
                 'keterangan' => $data->keterangan ?? '',
