@@ -26,12 +26,14 @@ class DashboardController extends Controller
         $totalBarangs = Barang::count();
         $totalRequest = Requests::where('status', 'Pending')->count();
 
+        // Ambil semua data bahan dengan relasi kategori
         $bahans = Bahan::with('kategori')->get();
         $bahansMenipis = $bahans->filter(function ($bahan) {
             return ($bahan->satuan == 'KG' && $bahan->stok <= 2) ||
                 ($bahan->satuan == 'POT' && $bahan->stok <= 5);
-        });
+        })->sortBy('stok'); // Urutkan berdasarkan stok dari yang terkecil
 
+        // Ambil semua data barang dengan relasi kategori
         $barangs = Barang::with('kategori_brg')->get();
         $barangMenipis = $barangs->filter(function ($barang) {
             return ($barang->satuan_brg == 'Bks' && $barang->stok_brg <= 5) ||
@@ -39,11 +41,11 @@ class DashboardController extends Controller
                 ($barang->satuan_brg == 'Botol' && $barang->stok_brg <= 5) ||
                 ($barang->satuan_brg == 'Jerigen' && $barang->stok_brg <= 2) ||
                 (!in_array($barang->satuan_brg, ['Bks', 'Pcs', 'Botol', 'Jerigen']) && $barang->stok_brg <= 3);
-                
-        });
+        })->sortBy('stok_brg'); // Urutkan berdasarkan stok barang dari yang terkecil
 
-        return view('supervisor.dashboard', compact('totalBahans', 'totalBarangs', 'totalRequest', 'bahansMenipis', 'barangs'));
+        return view('supervisor.dashboard', compact('totalBahans', 'totalBarangs', 'totalRequest', 'bahansMenipis', 'barangMenipis', 'barangs'));
     }
+
     public function dashboardPegawai()
     {
         $pegawaiId = Auth::id();

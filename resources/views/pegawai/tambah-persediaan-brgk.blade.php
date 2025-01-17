@@ -17,10 +17,14 @@
             <form action="{{ route('pegawai.store-persediaan-brgk') }}" method="POST">
                 @csrf
                 <div class="mb-2">
-                    <label for="tanggal" class="form-label">Tanggal</label>
-                    <input type="date" class="form-control" id="tanggal" name="tanggal" placeholder="Masukkan Tanggal" required>
-                </div>                
-                            
+                    <label for="tanggal">Tanggal</label>
+                    <input type="date" name="tanggal" id="tanggal" class="form-control" 
+                           value="{{ date('Y-m-d') }}" 
+                           min="{{ date('Y-m-d') }}" 
+                           max="{{ date('Y-m-d', strtotime('+2 days')) }}" 
+                           required>
+                </div>
+                                                           
                 <div class="mb-2">
                     <label for="barang_id" class="form-label">Nama Barang</label>
                     <select class="form-control" id="barang_id" name="barang_id">

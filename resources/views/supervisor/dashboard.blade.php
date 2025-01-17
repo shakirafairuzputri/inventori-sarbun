@@ -74,7 +74,6 @@
             <div class="card custom-card d-flex flex-column align-items-start">
                 <h5 class="mb-1 ms-2 mt-1">Navigasi</h5>
                 <div class="ms-2 me-2 d-flex flex-row justify-content-between">
-                    <!-- First list with custom link color and spacing -->
                     <ul class="list-unstyled small-font me-3">
                         <li><a href="{{ route('supervisor.kategori-bhn') }}" class="custom-link">Kategori Bahan</a></li>
                         <li><a href="{{ route('supervisor.kategori-brg') }}" class="custom-link">Kategori Barang</a></li>
@@ -82,8 +81,6 @@
                         <li><a href="{{ route('supervisor.inventori-retur') }}" class="custom-link">Retur Bahan</a></li>
                         <li><a href="{{ route('supervisor.inventori-beli') }}" class="custom-link">Pembelian Bahan</a></li>
                     </ul>
-                
-                    <!-- Second list with custom link color -->
                     <ul class="list-unstyled small-font">
                         <li><a href="{{ route('supervisor.inventori-produksi') }}" class="custom-link">Produksi Bahan</a></li>
                         <li><a href="{{ route('supervisor.inventori-brgm') }}" class="custom-link">Barang Masuk</a></li>
@@ -91,11 +88,10 @@
                         <li><a href="{{ route('supervisor.laporan-bhn') }}" class="custom-link">Laporan Bahan</a></li>
                         <li><a href="{{ route('supervisor.laporan-brg') }}" class="custom-link">Laporan Barang</a></li>
                     </ul>
-                </div>                
+                </div>
             </div>
         </div>
     </div>
-   
     <div class="card mb-4">
         <div class="card-body">
             <div class="table-responsive">
@@ -112,25 +108,24 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($bahansMenipis as $key => $bahan)
-                            <tr>
-                                <td>{{ $loop->iteration }}</td>
-                                <td>{{ $bahan->nama }}</td>
-                                <td>{{ $bahan->kategori->kategori ?? 'Tidak Diketahui' }}</td>
-                                <td>{{ $bahan->satuan }}</td>
-                                <td>
-                                    {{ $bahan->stok }}
-                                    @if (($bahan->satuan == 'KG' && $bahan->stok <= 2) || ($bahan->satuan == 'POT' && $bahan->stok <= 5))
-                                        <span class="text-danger"> (Mohon Lakukan Pembelian)</span>
-                                        <span class="dot"></span>
-                                    @endif
-                                </td>
-                            </tr>
+                        @foreach ($bahansMenipis as $bahan)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td>{{ $bahan->nama }}</td>
+                            <td>{{ $bahan->kategori->kategori ?? 'Tidak Diketahui' }}</td>
+                            <td>{{ $bahan->satuan }}</td>
+                            <td>
+                                <span class="fw-bold">{{ $bahan->stok }}</span>
+                                <span class="ms-2 {{ $bahan->stok <= 1 ? 'text-danger' : ($bahan->stok <= 5 ? 'text-warning' : 'text-success') }}">
+                                    {{ $bahan->stok <= 1 ? '(Segera Restock!)' : ($bahan->stok <= 5 ? '(Mohon Lakukan Pembelian)' : '') }}
+                                </span>
+                            </td>
+                        </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
-        </div>        
+        </div>
     </div>
     <div class="card mb-4">
         <div class="card-body">
@@ -148,25 +143,24 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($barangs as $key => $barang)
+                        @foreach ($barangMenipis as $barang)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $barang->nama_brg }}</td>
                             <td>{{ $barang->kategori_brg->kategori_brg ?? 'Tidak diketahui' }}</td>
-                            <td>{{ $barang->satuan_brg->satuan_brg ?? 'Tidak diketahui'}}</td>
+                            <td>{{ $barang->satuan_brg->satuan_brg ?? 'Tidak diketahui' }}</td>
                             <td>
-                                {{ $barang->stok_brg }}
-                                @if ($barang->stok_brg <= 3)
-                                    <span class="text-danger"> (Mohon Lakukan Pembelian)</span>
-                                    <span class="dot"></span>
-                                @endif
-                            </td>                            
-                            </tr>
+                                <span class="fw-bold">{{ $barang->stok_brg }}</span>
+                                <span class="ms-2 {{ $barang->stok_brg <= 1 ? 'text-danger' : ($barang->stok_brg <= 3 ? 'text-warning' : 'text-success') }}">
+                                    {{ $barang->stok_brg <= 1 ? '(Segera Restock!)' : ($barang->stok_brg <= 3 ? '(Mohon Lakukan Pembelian)' : '') }}
+                                </span>
+                            </td>
+                        </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
-        </div>        
+        </div>
     </div>
 </div>
 @endsection

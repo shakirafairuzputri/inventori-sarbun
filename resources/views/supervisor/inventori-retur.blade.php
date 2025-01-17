@@ -75,6 +75,7 @@
                         <th>Satuan</th>
                         <th>Retur Baik</th>
                         <th>Retur Rusak</th>
+                        <th>Jenis Kerusakan</th>
                         <th>Pegawai (ID)</th>
                         <th>Status</th>
                         <th>Aksi</th>
@@ -91,6 +92,7 @@
                             <td>{{ $retur->bahan->satuan }}</td>
                             <td>{{ $retur->retur_baik }}</td>
                             <td>{{ $retur->retur_rusak }}</td>
+                            <td>{{ $retur->jenis_kerusakan }}</td>
                             <td>{{ $retur->user->name . ' (' . $retur->user->id . ')' ?? 'Tidak Diketahui' }}</td> <!-- Menampilkan nama user yang menginput -->
                             <td>{{ $retur->status }}</td>
                             <td>

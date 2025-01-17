@@ -18,8 +18,12 @@
                 @csrf
                 <div class="mb-2">
                     <label for="tanggal">Tanggal</label>
-                    <input type="date" name="tanggal" class="form-control" value="{{ old('tanggal', date('Y-m-d')) }}" required>
-                </div>
+                    <input type="date" name="tanggal" id="tanggal" class="form-control" 
+                           value="{{ date('Y-m-d') }}" 
+                           min="{{ date('Y-m-d') }}" 
+                           max="{{ date('Y-m-d', strtotime('+2 days')) }}" 
+                           required>
+                </div>                
                 <div class="mb-2">
                     <label for="bahan_id">Bahan</label>
                     <select name="bahan_id" class="form-control" id="bahan_id" required>
