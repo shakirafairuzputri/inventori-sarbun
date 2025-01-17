@@ -44,14 +44,6 @@
                     <label for="satuan">Satuan</label>
                     <input type="text" name="satuan" id="satuan" class="form-control" readonly>
                 </div>
-                <div class="mb-2">
-                    <label for="retur_baik">Retur Baik</label>
-                    <input type="number" step="0.01" name="retur_baik" class="form-control">
-                </div>
-                <div class="mb-2">
-                    <label for="retur_rusak">Retur Rusak</label>
-                    <input type="number" step="0.01" name="retur_rusak" class="form-control">
-                </div>
 
                 <div class="mb-2">
                     <label for="jenis_kerusakan">Jenis Kerusakan</label>
@@ -60,6 +52,16 @@
                         <option value="Kadaluarsa">Kadaluarsa</option>
                         <option value="Rusak">Rusak</option>
                     </select>
+                </div>
+
+                <div id="retur_baik_group" class="mb-2 d-none">
+                    <label for="retur_baik">Retur Baik</label>
+                    <input type="number" step="0.01" name="retur_baik" id="retur_baik" class="form-control">
+                </div>
+                
+                <div id="retur_rusak_group" class="mb-2 d-none">
+                    <label for="retur_rusak">Retur Rusak</label>
+                    <input type="number" step="0.01" name="retur_rusak" id="retur_rusak" class="form-control">
                 </div>
 
                 @if ($errors->any())
@@ -93,6 +95,11 @@
 
 <script>
     $(document).ready(function() {
+        $('#bahan_id').select2({
+            placeholder: 'Cari Nama Bahan',
+            allowClear: true
+        });
+
         $('#bahan_id').change(function() {
             var selectedOption = $(this).find('option:selected');
             var kategori = selectedOption.data('kategori');
@@ -101,24 +108,19 @@
             $('#kategori').val(kategori);
             $('#satuan').val(satuan);
         });
-    });
-</script>
-<script>
-    $(document).ready(function() {
-        $('#bahan_id').select2({
-            placeholder: 'Cari Nama Bahan',
-            allowClear: true
-        });
-        
-    });
 
-    document.getElementById('bahan_id').addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const kategori = selectedOption.getAttribute('data-kategori');
-        const satuan = selectedOption.getAttribute('data-satuan');
-        
-        document.getElementById('kategori').value = kategori;
-        document.getElementById('satuan').value = satuan;
+        $('#jenis_kerusakan').change(function() {
+            var jenisKerusakan = $(this).val();
+            if (jenisKerusakan === 'Kadaluarsa') {
+                $('#retur_baik_group').removeClass('d-none');
+                $('#retur_rusak_group').addClass('d-none');
+            } else if (jenisKerusakan === 'Rusak') {
+                $('#retur_rusak_group').removeClass('d-none');
+                $('#retur_baik_group').addClass('d-none');
+            } else {
+                $('#retur_baik_group, #retur_rusak_group').addClass('d-none');
+            }
+        });
     });
 </script>
 
