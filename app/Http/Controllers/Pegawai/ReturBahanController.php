@@ -41,22 +41,35 @@ class ReturBahanController extends Controller
         $validated = $request->validate([
             'tanggal' => 'required|date',
             'bahan_id' => 'required|exists:bahans,id',
-            'retur_baik' => 'nullable|numeric',
-            'retur_rusak' => 'nullable|numeric',
+            'retur_baik' => 'nullable|numeric|min:0',
+            'retur_rusak' => 'nullable|numeric|min:0',
             'jenis_kerusakan' => 'required|in:Kadaluarsa,Rusak',
         ]);
-    
-        // Set nilai default jika retur_baik dan retur_rusak tidak diisi
+
         $returBaik = $validated['retur_baik'] ?? 0;
         $returRusak = $validated['retur_rusak'] ?? 0;
         $jenisKerusakan = $validated['jenis_kerusakan'];
-    
+
+        // Ambil data stok bahan dari tabel bahan
+        $bahan = Bahan::find($validated['bahan_id']);
+        if (!$bahan) {
+            return back()->withErrors(['bahan_id' => 'Data bahan tidak ditemukan.']);
+        }
+
+        // Validasi stok bahan
+        if (($jenisKerusakan === 'Kadaluarsa' && $returBaik > $bahan->stok) ||
+            ($jenisKerusakan === 'Rusak' && $returRusak > $bahan->stok)) {
+            return back()->withErrors([
+                'error' => 'Jumlah retur tidak boleh melebihi stok. (' . $bahan->stok . ').'
+            ]);
+        }
+
         // Cek apakah ada data retur untuk tanggal dan bahan_id yang sama
         $returBahan = ReturBahan::where('tanggal', $validated['tanggal'])
                                 ->where('bahan_id', $validated['bahan_id'])
                                 ->where('jenis_kerusakan', $jenisKerusakan)
                                 ->first();
-    
+
         if ($returBahan) {
             // Jika data sudah ada, tambahkan nilai retur_baik dan retur_rusak
             $returBahan->retur_baik += $returBaik;
@@ -74,25 +87,26 @@ class ReturBahanController extends Controller
                 'status' => 'Sudah Dikembalikan',
             ]);
         }
-    
+
         // Cek atau tambahkan data di tabel pembelian_bahan
         $pembelianBahan = PembelianBahan::firstOrCreate(
             ['tanggal' => $validated['tanggal'], 'bahan_id' => $validated['bahan_id']],
         );
-    
+
         // Cek atau tambahkan data di tabel produksi_bahan
         $produksiBahan = ProduksiBahan::firstOrCreate(
             ['tanggal' => $validated['tanggal'], 'pembelian_id' => $pembelianBahan->id]
         );
-    
+
         // Cek atau tambahkan data di tabel persediaan_bahans
         PersediaanBahan::firstOrCreate(
             ['tanggal' => $validated['tanggal'], 'produksi_id' => $produksiBahan->id]
         );
-    
+
         // Redirect dengan pesan sukses
         return redirect()->route('pegawai.persediaan-retur')->with('success', 'Retur bahan berhasil ditambahkan.');
     }
+
     
                     
     public function editRetur($id)

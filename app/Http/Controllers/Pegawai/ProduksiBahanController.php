@@ -53,21 +53,16 @@ class ProduksiBahanController extends Controller
             'produksi_rusak' => 'nullable|numeric',
         ]);
 
-        // Cek apakah data pembelian sudah ada berdasarkan tanggal dan bahan_id
+        // Ambil bahan_id berdasarkan pembelian_id atau input langsung
         if ($request->input('pembelian_id')) {
-            // Ambil data pembelian yang sudah ada
             $pembelian = PembelianBahan::findOrFail($request->input('pembelian_id'));
-            $bahanId = $pembelian->bahan_id; // Mengambil bahan_id dari PembelianBahan
+            $bahanId = $pembelian->bahan_id;
         } else {
-            // Jika tidak ada pembelian_id, pastikan ada bahan_id yang valid di input
-            $bahanId = $request->input('bahan_id'); // Pastikan ada input 'bahan_id'
-
-            // Cek apakah pembelian sudah ada dengan tanggal dan bahan_id yang sama
+            $bahanId = $request->input('bahan_id');
             $pembelian = PembelianBahan::where('tanggal', $request->input('tanggal'))
                 ->where('bahan_id', $bahanId)
                 ->first();
 
-            // Jika pembelian belum ada, buat data baru
             if (!$pembelian) {
                 $pembelian = PembelianBahan::create([
                     'tanggal' => $request->input('tanggal'),
@@ -79,7 +74,24 @@ class ProduksiBahanController extends Controller
             }
         }
 
-        // Cek apakah data ProduksiBahan sudah ada untuk tanggal dan bahan_id yang sama
+        // Ambil stok bahan dari tabel bahan
+        $bahan = Bahan::findOrFail($bahanId);
+        $stokTersedia = $bahan->stok;
+
+        // Hitung total produksi
+        $produksiBaik = $request->input('produksi_baik', 0);
+        $produksiPaket = $request->input('produksi_paket', 0);
+        $produksiRusak = $request->input('produksi_rusak', 0);
+        $totalProduksi = $produksiBaik + $produksiPaket + $produksiRusak;
+
+        // Cek apakah total produksi melebihi stok tersedia
+        if ($totalProduksi > $stokTersedia) {
+            return redirect()->back()->withErrors([
+                'error' => 'Total produksi tidak boleh melebihi stok bahan yang tersedia (' . $stokTersedia . ').'
+            ])->withInput();
+        }
+
+        // Cek atau buat data ProduksiBahan
         $produksi = ProduksiBahan::whereHas('pembelian', function ($query) use ($bahanId) {
             $query->where('bahan_id', $bahanId);
         })
@@ -87,32 +99,29 @@ class ProduksiBahanController extends Controller
         ->first();
 
         if ($produksi) {
-            // Tambahkan nilai pada data yang sudah ada
-            $produksi->produksi_baik += $request->input('produksi_baik');
-            $produksi->produksi_paket += $request->input('produksi_paket');
-            $produksi->produksi_rusak += $request->input('produksi_rusak');
+            $produksi->produksi_baik += $produksiBaik;
+            $produksi->produksi_paket += $produksiPaket;
+            $produksi->produksi_rusak += $produksiRusak;
             $produksi->user_id = Auth::id();
             $produksi->save();
         } else {
-            // Buat data ProduksiBahan baru jika belum ada
             $produksi = ProduksiBahan::create([
                 'tanggal' => $request->input('tanggal'),
                 'pembelian_id' => $pembelian->id,
                 'bahan_id' => $bahanId,
-                'produksi_baik' => $request->input('produksi_baik'),
-                'produksi_paket' => $request->input('produksi_paket'),
-                'produksi_rusak' => $request->input('produksi_rusak'),
+                'produksi_baik' => $produksiBaik,
+                'produksi_paket' => $produksiPaket,
+                'produksi_rusak' => $produksiRusak,
                 'user_id' => Auth::id(),
             ]);
         }
 
-        // Cek apakah data PersediaanBahan sudah ada untuk tanggal dan produksi_id yang sama
+        // Cek atau buat data PersediaanBahan
         $persediaanBahan = PersediaanBahan::where('tanggal', $request->input('tanggal'))
             ->where('produksi_id', $produksi->id)
             ->first();
 
         if (!$persediaanBahan) {
-            // Jika data PersediaanBahan belum ada, buat data baru
             PersediaanBahan::create([
                 'tanggal' => $request->input('tanggal'),
                 'produksi_id' => $produksi->id,
@@ -122,6 +131,7 @@ class ProduksiBahanController extends Controller
 
         return redirect()->route('pegawai.persediaan-produksi')->with('success', 'Produksi bahan berhasil ditambahkan.');
     }
+
 
     public function editProduksi($id)
     {
