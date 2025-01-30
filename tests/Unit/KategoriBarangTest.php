@@ -34,7 +34,7 @@ class KategoriBarangTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewIs('supervisor.kategori-brg');
-        $response->assertSee('Kategori Barang'); // Sesuaikan dengan elemen yang ada di view
+        $response->assertSee('Kategori Barang'); 
     }
 
     public function test_store_kategori_brg_success()

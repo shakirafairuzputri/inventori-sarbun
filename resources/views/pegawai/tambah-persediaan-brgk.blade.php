@@ -18,11 +18,8 @@
                 @csrf
                 <div class="mb-2">
                     <label for="tanggal">Tanggal</label>
-                    <input type="date" name="tanggal" id="tanggal" class="form-control" 
-                           value="{{ date('Y-m-d') }}" 
-                           min="{{ date('Y-m-d') }}" 
-                           max="{{ date('Y-m-d', strtotime('+2 days')) }}" 
-                           required>
+                    <input type="date" name="tanggal" id="tanggal" class="form-control" value="{{ date('Y-m-d') }}"
+                        min="{{ date('Y-m-d', strtotime('-1 days')) }}" max="{{ date('Y-m-d', strtotime('+1 days')) }}" required>
                 </div>
                                                            
                 <div class="mb-2">
